@@ -2,8 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { FaSort } from "react-icons/fa";
 import { provinces } from '../constants/data';
 import { useLocalStorage } from '../../lib/utils';
-
-const ROWS_PER_PAGE = 5;
+import SearchField from '../common/SearchField';
+import CommonSort from '../common/CommonSort';
+import TableHead from '../common/TableHead';
+import TableData from '../common/TableData';
+import Pagination from '../common/Pagination';
 
 export default function UserTable({ countries }) {
     const [data, setData] = useLocalStorage('formData', []);
@@ -12,7 +15,8 @@ export default function UserTable({ countries }) {
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedCountry, setSelectedCountry] = useState('');
     const [editItem, setEditItem] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1); // For handling current page
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 2; // Number of rows per page
 
     // Sorting function
     const handleSort = (key) => {
@@ -31,10 +35,6 @@ export default function UserTable({ countries }) {
         setSortConfig({ key, direction });
     };
 
-    // Search function
-    const handleSearch = (event) => {
-        setSearchTerm(event.target.value);
-    };
 
     // Filter function
     const handleFilter = () => {
@@ -52,77 +52,51 @@ export default function UserTable({ countries }) {
     // Memoized filtered data to optimize performance
     const filteredData = useMemo(handleFilter, [searchTerm, selectedProvince, selectedCountry, data]);
 
-    // Paginate data
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-        const endIndex = startIndex + ROWS_PER_PAGE;
-        return filteredData.slice(startIndex, endIndex);
-    }, [filteredData, currentPage]);
+    // Pagination
+    const indexOfLastItem = currentPage * rowsPerPage;
+    const indexOfFirstItem = indexOfLastItem - rowsPerPage;
+    const currentData = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+    // const indexOfLastItem = currentPage * rowsPerPage;
+    // const indexOfFirstItem = indexOfLastItem - rowsPerPage;
+    // const currentData = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+    // const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
     // Handle Edit Action
     const handleEdit = (item) => {
         setEditItem(item);
     };
 
-    // Handle Save Changes
+    // Handle Delete Action
+    const handleDelete = (item) => {
+        if (window.confirm('Are you sure you want to delete this item?')) {
+            setData(data.filter(d => d !== item));
+        }
+    };
+
+    // Save changes to edited item
     const handleSaveEdit = () => {
         setData(data.map(d => d.id === editItem.id ? editItem : d));
         setEditItem(null);
     };
 
-    // Handle Cancel Edit
+    // Cancel edit
     const handleCancelEdit = () => {
         setEditItem(null);
     };
 
-    // Handle Page Change
-    const handlePageChange = (direction) => {
-        setCurrentPage(prevPage => {
-            if (direction === 'next') {
-                return Math.min(prevPage + 1, Math.ceil(filteredData.length / ROWS_PER_PAGE));
-            } else if (direction === 'prev') {
-                return Math.max(prevPage - 1, 1);
-            }
-        });
-    };
+    // // Change Page
+    // const handlePageChange = (newPage) => {
+    //     setCurrentPage(newPage);
+    // };
 
     return (
         <>
             <div className="mt-4">
                 <div className="mb-4 flex gap-4 text-sm">
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="p-2 border rounded"
-                    />
-                    <select
-                        value={selectedProvince}
-                        onChange={(e) => setSelectedProvince(e.target.value)}
-                        className="p-2 border rounded"
-                    >
-                        <option value="">All Provinces</option>
-                        {provinces.map((province) => (
-                            <option key={province} value={province}>
-                                {province}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        value={selectedCountry}
-                        onChange={(e) => setSelectedCountry(e.target.value)}
-                        className="p-2 border rounded"
-                    >
-                        <option value="">All Countries</option>
-                        {countries.map((country) => (
-                            <option key={country} value={country}>
-                                {country}
-                            </option>
-                        ))}
-                    </select>
+                    <SearchField searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                    <CommonSort selectedItem={selectedProvince} setSelectedItem={setSelectedProvince} data={provinces} />
+                    <CommonSort selectedItem={selectedCountry} setSelectedItem={setSelectedCountry} data={countries} />
                 </div>
-
                 {/* Edit Form */}
                 {editItem && (
                     <div className="p-4 border rounded mb-4 bg-gray-100">
@@ -132,60 +106,60 @@ export default function UserTable({ countries }) {
                             value={editItem.name}
                             onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
                             placeholder="Name"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.email}
                             onChange={(e) => setEditItem({ ...editItem, email: e.target.value })}
                             placeholder="Email"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.phnumber}
                             onChange={(e) => setEditItem({ ...editItem, phnumber: e.target.value })}
                             placeholder="Phone Number"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.dob}
                             onChange={(e) => setEditItem({ ...editItem, dob: e.target.value })}
                             placeholder="DOB"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.city}
                             onChange={(e) => setEditItem({ ...editItem, city: e.target.value })}
                             placeholder="City"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.district}
                             onChange={(e) => setEditItem({ ...editItem, district: e.target.value })}
                             placeholder="District"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.province}
                             onChange={(e) => setEditItem({ ...editItem, province: e.target.value })}
                             placeholder="Province"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <input
                             type="text"
                             value={editItem.country}
                             onChange={(e) => setEditItem({ ...editItem, country: e.target.value })}
                             placeholder="Country"
-                            className="p-2 border rounded mb-2 w-full"
+                            className="p-2 border rounded mb-2 w-full text-sm"
                         />
                         <button
                             onClick={handleSaveEdit}
-                            className="p-2 bg-blue-500 text-white rounded mr-2"
+                            className="p-2 bg-primary text-white rounded mr-2"
                         >
                             Save
                         </button>
@@ -199,163 +173,64 @@ export default function UserTable({ countries }) {
                 )}
 
                 <div className="relative overflow-x-auto sm:rounded-md">
-                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 text-gray-400">
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 ">
                         <thead className="text-xs text-black uppercase bg-gray-200">
                             <tr>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('name')}
-                                >
-                                    <div className='flex items-center'>
-                                        Name
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('email')}
-                                >
-                                    <div className='flex items-center'>
-                                        Email
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('phnumber')}
-                                >
-                                    <div className='flex items-center'>
-                                        Phone Number
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('dob')}
-                                >
-                                    <div className='flex items-center'>
-                                        DOB
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('city')}
-                                >
-                                    <div className='flex items-center'>
-                                        City
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('district')}
-                                >
-                                    <div className='flex items-center'>
-                                        District
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('province')}
-                                >
-                                    <div className='flex items-center'>
-                                        Province
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('country')}
-                                >
-                                    <div className='flex items-center'>
-                                        Country
-                                        <FaSort />
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3 cursor-pointer"
-                                    onClick={() => handleSort('profilePicture')}
-                                >
-                                    Profile Picture
-                                </th>
-                                <th scope="col" colSpan={2} className="px-6 py-3">
-                                    Action
-                                </th>
+                                <TableHead name={'profile picture'} onClick={() => handleSort('profilePicture')}>Profile Picture</TableHead>
+                                <TableHead name={'name'} onClick={() => handleSort('name')} />
+                                <TableHead name={'email'} onClick={() => handleSort('email')} />
+                                <TableHead name={'phone number'} onClick={() => handleSort('phnumber')} />
+                                <TableHead name={'dob'} onClick={() => handleSort('dob')} />
+                                <TableHead name={'city'} onClick={() => handleSort('city')} />
+                                <TableHead name={'district'} onClick={() => handleSort('district')} />
+                                <TableHead name={'province'} onClick={() => handleSort('province')} />
+                                <TableHead name={'country '} onClick={() => handleSort('country')} />
+                                <th scope="col" className="px-6 py-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedData.map((item, index) => (
-                                <tr key={index} className="bg-white border-b bg-gray-100 border-gray-300 text-slate-600">
-                                    <th scope="row" className="px-6 py-4 font-medium text-slate-600 whitespace-nowrap">
-                                        {item.name}
-                                    </th>
-                                    <td className="px-6 py-4">{item.email}</td>
-                                    <td className="px-6 py-4">{item.phnumber}</td>
-                                    <td className="px-6 py-4">{item.dob}</td>
-                                    <td className="px-6 py-4">{item.city}</td>
-                                    <td className="px-6 py-4">{item.district}</td>
-                                    <td className="px-6 py-4">{item.province}</td>
-                                    <td className="px-6 py-4">{item.country}</td>
-                                    <td className="px-6 py-4">
-                                        {/* Render profile picture if it has a valid URL or placeholder */}
-                                        {item.profilePicture && typeof item.profilePicture === 'string'
-                                            ? <img src={item.profilePicture} alt="Profile" width="100" />
-                                            : 'No Image'}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <a
-                                            href="#"
-                                            onClick={() => handleEdit(item)}
-                                            className="font-medium text-blue-600 hover:underline"
-                                        >
-                                            Edit
-                                        </a>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <a
-                                            href="#"
-                                            onClick={() => handleDelete(item)}
-                                            className="font-medium text-red-600 hover:underline"
-                                        >
-                                            Delete
-                                        </a>
-                                    </td>
+                            {currentData.length > 0 ? (
+                                currentData.map((item, index) => (
+                                    <tr key={index} className="border-b bg-white hover:bg-gray-50">
+                                        <TableData>
+                                            {/* Render profile picture if it has a valid URL or placeholder */}
+                                            {item.profilePicture && typeof item.profilePicture === 'string'
+                                                ? <img src={item.profilePicture} alt="Profile" width="100" />
+                                                : 'No Image'}
+                                        </TableData>                                       <TableData>{item.name}</TableData>
+                                        <TableData>{item.email}</TableData>
+                                        <TableData>{item.phnumber}</TableData>
+                                        <TableData>{item.dob}</TableData>
+                                        <TableData>{item.city}</TableData>
+                                        <TableData>{item.district}</TableData>
+                                        <TableData>{item.province}</TableData>
+                                        <TableData>{item.country}</TableData>
+                                        <TableData>
+                                            <button
+                                                onClick={() => handleEdit(item)}
+                                                className="p-2 text-primary  text-md hover:underline font-medium"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(item)}
+                                                className="p-2 text-red-500  text-md hover:underline font-medium"
+                                            >
+                                                Delete
+                                            </button>
+                                        </TableData>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="9" className="text-center py-4">No data available</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
-                </div>
 
-                {/* Pagination Controls */}
-                <div className="mt-4 flex justify-between items-center">
-                    <button
-                        onClick={() => handlePageChange('prev')}
-                        disabled={currentPage === 1}
-                        className="p-2 bg-gray-300 text-gray-700 rounded"
-                    >
-                        Previous
-                    </button>
-                    <span className="text-gray-700">
-                        Page {currentPage} of {Math.ceil(filteredData.length / ROWS_PER_PAGE)}
-                    </span>
-                    <button
-                        onClick={() => handlePageChange('next')}
-                        disabled={currentPage === Math.ceil(filteredData.length / ROWS_PER_PAGE)}
-                        className="p-2 bg-gray-300 text-gray-700 rounded"
-                    >
-                        Next
-                    </button>
+                    {/* Pagination Controls */}
+                    <Pagination rowsPerPage={rowsPerPage} filteredData={filteredData} currentPage={currentPage} setCurrentPage={setCurrentPage} />
                 </div>
             </div>
         </>
