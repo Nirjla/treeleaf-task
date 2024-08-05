@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
+    "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "formik": "^2.4.6",
     "postcss": "^8.4.40",
